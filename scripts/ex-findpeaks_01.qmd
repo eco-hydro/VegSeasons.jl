@@ -1,25 +1,12 @@
----
-title: "findpeaks"
-format: html
-code-line-numbers: true
----
-
 # 加载包与数据
 ```{julia}
-using Findpeaks
+using VegSeasons
 using Ipaper
 # using Dates
 using Plots
 using Statistics: quantile
+using RTableTools
 
-# 这一个函数，负担极重
-function write_fig2(file="Rplot.pdf", width=10, height=5; show=true)
-  plot!(size=(width * 72, height * 72))
-  savefig(file)
-  if show
-    show_file(file)
-  end
-end
 # pwd()
 df = fread("data-raw/02475000.csv")
 ```
@@ -31,20 +18,22 @@ x = df.q
 date = df.date
 
 TRS = quantile(x, 0.8)
-df_peaks = findpeaks(x)
-d2 = filter_peaks(df_peaks, minpeakheight=TRS, A_min=TRS*0.1, minpeakdistance=3)
+@time d_peaks = findpeaks(x)
+@time d_peaks = findpeaks_allen(x)
+
+d2 = filter_peaks(d_peaks, minpeakheight=TRS, A_min=TRS * 0.1, minpeakdistance=3)
 # info = @pipe filter(d -> !(d.status ∈ ["minpeakheight", "minpeakdistance"][1:1]), d2) 
 d2
 # fwrite(info, "peak_info.csv")
-  # _[_.status .== "", :]
+# _[_.status .== "", :]
 
 # d_peaks = @pipe df_peaks |> 
 #   filter(d -> d.val_peak >= TRS && d.h_min >= TRS*0.1, _)
 
 # print(d_peaks)
 
-# t_peak = date[d_peaks.pos_peak];
-# val_peak = d_peaks.val_peak;
+t_peak = date[d_peaks.pos_peak];
+val_peak = d_peaks.val_peak;
 ```
 
 
@@ -68,5 +57,5 @@ scatter!(p, t_peak, val_peak,
             label="Peak",
             markercolor=:red,
             markershape=:circle)
-write_fig2("Rplot.pdf")
+write_fig("Rplot.pdf")
 ```
