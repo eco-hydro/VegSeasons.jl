@@ -6,3 +6,13 @@
 [![Codecov](https://codecov.io/gh/eco-hydro/VegSeasons.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/eco-hydro/VegSeasons.jl/tree/master)
 
 > Dongdong Kong
+
+
+## References
+
+
+- `Findpeaks.jl`: <https://github.com/tungli/Findpeaks.jl>
+
+- `Peaks.jl`: <https://github.com/halleysfifthinc/Peaks.jl>
+
+- <https://github.com/halleysfifthinc/Peaks.jl/issues/11#issuecomment-689998279>

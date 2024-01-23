@@ -7,41 +7,26 @@ using DataFrames: sort!, nrow
         ndowns::Int=nups,
         zerostr::Char='0',
         peakpat=nothing, 
-        minpeakheight=typemin(T), 
-        minpeakdistance::Int=1,
-        A_max=zero(T),
-        A_min=zero(T),
-        npeaks::Int=0,
-        sortstr=false)
-
-# Filter condition
-```julia
-p.value >= minpeakheight && 
-    p.value - max(x[p.start], x[p.stop]) >= A_min && 
-    p.value - min(x[p.start], x[p.stop]) >= A_max 
-```
+        verbose=false,
+        options...)
 
 # Examples
-```
-findpeaks(x; nups, ndowns, zerostr, peakpat=nothing, minpeakheight=typemin(T), threshold=zero(T), 
-    npeaks=0, sortstr=false)
-```
 
 # References
-@author: Gerhard Aigner   
-https://github.com/halleysfifthinc/Peaks.jl/issues/11#issuecomment-689998279
+- Gerhard Aigner, <https://github.com/halleysfifthinc/Peaks.jl/issues/11#issuecomment-689998279>
 """
 function findpeaks(x::AbstractVector{T};
   nups::Int=1,
   ndowns::Int=nups,
   zerostr::Char='0',
-  peakpat=nothing,
+  peakpat=nothing, 
+  verbose=false,
   options...) where {T<:Real}
 
   zerostr ∉ ('0', '+', '-') && error("zero must be one of `0`, `-` or `+`")
 
   # generate the peak pattern with no of ups and downs or use provided one
-  peakpat = Regex(peakpat === nothing ? "[+]{$nups,}[-]{$ndowns,}" : peakpat)
+  peakpat = Regex(peakpat === nothing ? "[+]{$nups,}[0]*[-]{$ndowns,}" : peakpat)
 
   # transform x into a "+-+...-+-" character string
   xs = String(map(diff(x)) do e
@@ -49,6 +34,7 @@ function findpeaks(x::AbstractVector{T};
     e > 0 && return '+'
     return zerostr
   end)
+  verbose && @show(xs)
 
   grps = filter(x -> length(x) > 0, findall(peakpat, xs))
   # find index positions and maximum values
@@ -70,9 +56,8 @@ function findpeaks(x::AbstractVector{T};
   end
 
   df_peaks = DataFrame(peaks)
-  if (length(options) > 0)
-    return filter_peaks(df_peaks; options...)
-  end
+  length(options) > 0 && (df_peaks = filter_peaks(df_peaks; options...))
+
   df_peaks
 end
 
@@ -106,10 +91,10 @@ function filter_peaks(df_peaks::DataFrame;
   end
   n = nrow(df_peaks)
 
-  removal = trues(n) # if true, then will be removed
+  removal = falses(n) # if true, then will be removed
   # 记录每个点被剔除的原因
-  status = Array{String}(undef, n)
-  for i = 1:n
+  status = fill("", n)
+  @inbounds for i = 1:n
     p = df_peaks[i, :]
     if p.val_peak < minpeakheight
       status[i] = "minpeakheight"
@@ -117,16 +102,14 @@ function filter_peaks(df_peaks::DataFrame;
       status[i] = "A_min"
     elseif abs(p.h_max) < A_max
       status[i] = "A_max"
-    else
-      status[i] = ""
-      removal[i] = false
     end
   end
   inds_good = findall(.!removal)
 
+  # TODO: 剔除peaks之后，可能存在beg, end变更的情况，如何考虑这种情况？
   # 2. 剔除距离较近的peaks
   if minpeakdistance > 1
-    for i in inds_good
+    @inbounds for i in inds_good
       removal[i] && continue
       for j in inds_good
         (removal[j] || i == j) && continue
@@ -151,7 +134,8 @@ function filter_peaks(df_peaks::DataFrame;
     npeaks = min(npeaks, nrow(df))
     df[1:npeaks, :]
   else
-    deleteat!(df_peaks, df_peaks.status .== "minpeakheight")
+    df_peaks[status .!== "minpeakheight", :]
+    # deleteat!(df_peaks, df_peaks.status .== "minpeakheight")
     # df_peaks
   end
 end

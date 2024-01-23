@@ -8,7 +8,7 @@ using Statistics: quantile
 using RTableTools
 
 # pwd()
-df = fread("data-raw/02475000.csv")
+df = fread("data/02475000.csv")
 ```
 
 # findpeaks
