@@ -3,4 +3,4 @@ ignore:
   - "src/*/deprecated"
   - "src/temp/*"
   - "src/*/temp"
-  - "src/findpeaks_allen.jl"
+  - "src/Peaks/*"

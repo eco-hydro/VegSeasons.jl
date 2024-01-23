@@ -1,9 +1,17 @@
+mutable struct st_season
+  di
+  r_max::Float64
+  r_min::Float64
+  # y_max::Float64
+  # y_min::Float64
+end
+
+
 # 符合条件的两个相邻(t_diff <= 5) seasons, 合并endtime
 # `rigth` merged into `left`
 function RightCombine_season(y_peak, y_end, date_peak, date_end, i::Integer)
   y_end[i] = y_end[i+1]
   date_end[i] = date_end[i+1]
-  # len[i] = date_end[i] - date_beg[i] + 1;
 
   if (y_peak[i] < y_peak[i+1])
     date_peak[i] = date_peak[i+1]
@@ -19,23 +27,19 @@ end
 # 3. (not used) 如果相邻生长季返青日期过短，则执行合并操作
 # 这里用max，而非min，意在保护A较小的生长季
 
-mutable struct st_season
-  di
-  r_max::Float64
-  r_min::Float64
-  # y_max::Float64
-  # y_min::Float64
-end
-
 # 如下情景会触发融合
 # - 1. y_end[i] >= A * rtrough_max + T1_minVal
 # - 2. con_left
 # - 3. con_right
-function check_season!(d; r_max=0.1, r_min=0.02, rtrough_max=0.7)
-  # t_diff <= DAYS_maxDIFF; # 相差在`DAYS_maxDIFF`天内认为相邻
-  DAYS_maxDIFF = 50    # days
-  DAYS_max2GS = 650    # days, max length of two growing seasons being able to merge
 
+"""
+    check_season!(d; r_max=0.1, r_min=0.02, rtrough_max=0.7, DAYS_maxDIFF=50, DAYS_max2GS=650)
+
+# Arguements
+- `DAYS_maxDIFF`: t_diff <= DAYS_maxDIFF; # 相差在`DAYS_maxDIFF`天内认为相邻
+- `DAYS_max2GS`: max length of two growing seasons being able to merge
+"""
+function check_season!(d; r_max=0.1, r_min=0.02, rtrough_max=0.7, DAYS_maxDIFF=50, DAYS_max2GS=650)
   # TODO: add a while for loop
   date_beg = d[!, 1]
   date_peak = d[!, 2]
@@ -127,6 +131,7 @@ function update_seasons(d)
   end
   d
 end
+
 
 export check_season!
 
